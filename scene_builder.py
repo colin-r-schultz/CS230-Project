@@ -1,9 +1,13 @@
 import pybullet as p
+import pybullet_data
 import math
 import time
 import random
 import numpy as np
 import pkgutil
+import faulthandler
+
+faulthandler.enable()
 
 
 SCENE_SIZE = 8
@@ -172,7 +176,7 @@ def process_scene():
     walls, map_label, bodies = build_scene()
     map_label = get_map(map_label)
     orient = p.getQuaternionFromEuler([0, 0, random.random() * 2 * math.pi])
-    planeId = p.loadURDF("other_models/plane.urdf", baseOrientation=orient)
+    planeId = p.loadURDF("plane.urdf", baseOrientation=orient)
     colorize(planeId)
     bodies.append(planeId)
     shots = 0
@@ -208,11 +212,13 @@ plugin = None
 if egl is not None:
     plugin = p.loadPlugin(egl.get_filename(), "_eglRendererPlugin")
     print('Using eglRenderer')
+p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
 p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
 p.configureDebugVisualizer(p.COV_ENABLE_WIREFRAME, 0)
 load_all_models()
 
+print("Starting...")
 M = 20000
 CHUNK_SIZE = 200
 N_CHUNKS = M // CHUNK_SIZE
