@@ -2,6 +2,13 @@ import pybullet as p
 import time
 import pkgutil
 import pybullet_data
+import random
+
+def random_color():
+    return [random.random(), random.random(), random.random(), 1]
+
+def colorize(obj):
+    p.changeVisualShape(obj, -1, rgbaColor=random_color())
 
 p.connect(p.DIRECT)
 egl = pkgutil.get_loader('eglRenderer')
@@ -13,9 +20,9 @@ p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
 p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
 
 p.setGravity(0, 0, -10)
-p.loadURDF("plane.urdf", [0, 0, -1])
-objID = p.loadURDF("r2d2.urdf")
-p.changeVisualShape(objID, -1, rgbaColor=[0.9, 0, 0, 1])
+objID = p.loadURDF("plane.urdf", [0, 0, -1])
+colorize(objID)
+p.loadURDF("r2d2.urdf")
 
 pixelWidth = 320
 pixelHeight = 220
