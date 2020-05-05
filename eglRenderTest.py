@@ -3,6 +3,7 @@ import time
 import pkgutil
 import pybullet_data
 import random
+import math
 
 def random_color():
     return [random.random(), random.random(), random.random(), 1]
@@ -20,7 +21,8 @@ p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
 p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
 
 p.setGravity(0, 0, -10)
-objID = p.loadURDF("plane.urdf", [0, 0, -1])
+orient = p.getQuaternionFromEuler([0, 0, random.random() * 2 * math.pi])
+objID = p.loadURDF("plane.urdf", baseOrientation=orient)
 colorize(objID)
 p.loadURDF("r2d2.urdf")
 
