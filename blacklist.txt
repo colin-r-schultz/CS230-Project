@@ -1,0 +1,4 @@
+IKEA_chair_NILS
+IKEA_bed_BEDDINGE
+IKEA_sofa_VRETA
+IKEA_chair_URBAN
