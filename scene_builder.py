@@ -1,9 +1,9 @@
 import pybullet as p
-import pybullet_data
 import math
 import time
 import random
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 SCENE_SIZE = 8
@@ -11,7 +11,7 @@ PIXELS_PER_METER = 8
 PIXEL_FRACTION = 1 / PIXELS_PER_METER
 MAP_SIZE = SCENE_SIZE * PIXELS_PER_METER
 PUPPER_HEIGHT = 0.3
-WALL_HEIGHT = 3
+WALL_HEIGHT = 8
 WALL_THICKNESS = 1
 MAX_WALL_INNESS = 2.5
 
@@ -20,6 +20,10 @@ IMAGE_HEIGHT = 108
 
 SHOTS_PER_SCENE = 64
 VIEW_DIM = 7
+
+HEIGHT_VARIATION = 0.1
+PITCH_VARIATION = 20 * math.pi / 180
+ROLL_VARIATION = 15 * math.pi / 180
 
 UNIT_SCALE = {
     'meters': 1,
@@ -167,7 +171,8 @@ def get_image(view):
 def process_scene():
     walls, map_label, bodies = build_scene()
     map_label = get_map(map_label)
-    planeId = p.loadURDF("plane.urdf")
+    orient = p.getQuaternionFromEuler([0, 0, random.random() * 2 * math.pi])
+    planeId = p.loadURDF("other_models/plane.urdf", baseOrientation=orient)
     colorize(planeId)
     bodies.append(planeId)
     shots = 0
@@ -178,8 +183,10 @@ def process_scene():
         coords = np.floor(rand / PIXEL_FRACTION).astype(np.int)
         if map_label[coords[0], coords[1]] == 0:
             continue
-        pos = np.array([rand[0], rand[1], PUPPER_HEIGHT])
-        rot = np.array([random.random() * 2 * math.pi, 0, 0])
+        pos = np.array([rand[0], rand[1], PUPPER_HEIGHT - random.random() * HEIGHT_VARIATION])
+        pitch = (1 - 2 * random.random()) * PITCH_VARIATION
+        roll = (1 - 2 * random.random()) * ROLL_VARIATION
+        rot = np.array([random.random() * 2 * math.pi, pitch, roll])
         view = pack_viewpoint(pos, rot)
         
         w, h, rgb, depth, seg = get_image(view)
@@ -198,8 +205,7 @@ def add_axis(arr):
 client = p.connect(p.DIRECT)
 p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
 p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
-p.configureDebugVisualizer(p.COV_ENABLE_WIREFRAME, 1)
-p.setAdditionalSearchPath(pybullet_data.getDataPath())
+p.configureDebugVisualizer(p.COV_ENABLE_WIREFRAME, 0)
 load_all_models()
 
 M = 20000
@@ -220,6 +226,5 @@ for j in range(N_CHUNKS):
     np.save('datasets/map_dataset.npy', map_dataset)
     print("Saving chunk {} ({} total scenes). {} seconds elapsed.".format(j+1, (j+1) * CHUNK_SIZE, time.time() - start))
 print("TIME:", time.time() - start)
-p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
 
 p.disconnect()
