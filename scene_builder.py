@@ -3,7 +3,7 @@ import math
 import time
 import random
 import numpy as np
-import matplotlib.pyplot as plt
+import pkgutil
 
 
 SCENE_SIZE = 8
@@ -203,6 +203,11 @@ def add_axis(arr):
     return arr.reshape((1,) + arr.shape)
 
 client = p.connect(p.DIRECT)
+egl = pkgutil.get_loader('eglRenderer')
+plugin = None
+if egl is not None:
+    plugin = p.loadPlugin(egl.get_filename(), "_eglRendererPlugin")
+    print('Using eglRenderer')
 p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
 p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
 p.configureDebugVisualizer(p.COV_ENABLE_WIREFRAME, 0)
@@ -227,4 +232,6 @@ for j in range(N_CHUNKS):
     print("Saving chunk {} ({} total scenes). {} seconds elapsed.".format(j+1, (j+1) * CHUNK_SIZE, time.time() - start))
 print("TIME:", time.time() - start)
 
+if plugin is not None:
+    p.unloadPlugin(plugin)
 p.disconnect()
