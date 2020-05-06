@@ -6,9 +6,13 @@ import random
 import numpy as np
 import pkgutil
 import faulthandler
+import sys
 
 faulthandler.enable()
 
+DATASET_PATH = 'datasets'
+if len(sys.argv) > 1:
+    DATASET_PATH = sys.argv[1]
 
 SCENE_SIZE = 8
 PIXELS_PER_METER = 8
@@ -232,9 +236,9 @@ for j in range(N_CHUNKS):
         image_dataset[i] = images
         view_dataset[i] = views
         map_dataset[i] = map_label
-    np.save('datasets/image_dataset.npy', image_dataset)
-    np.save('datasets/view_dataset.npy', view_dataset)
-    np.save('datasets/map_dataset.npy', map_dataset)
+    np.save(DATASET_PATH + '/image_dataset.npy', image_dataset)
+    np.save(DATASET_PATH + '/view_dataset.npy', view_dataset)
+    np.save(DATASET_PATH + '/map_dataset.npy', map_dataset)
     print("Saving chunk {} ({} total scenes). {} seconds elapsed.".format(j+1, (j+1) * CHUNK_SIZE, time.time() - start))
 print("TIME:", time.time() - start)
 
