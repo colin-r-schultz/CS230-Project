@@ -211,11 +211,11 @@ def add_axis(arr):
     return arr.reshape((1,) + arr.shape)
 
 client = p.connect(p.DIRECT)
-egl = pkgutil.get_loader('eglRenderer')
-plugin = None
-if egl is not None:
-    plugin = p.loadPlugin(egl.get_filename(), "_eglRendererPlugin")
-    print('Using eglRenderer')
+# egl = pkgutil.get_loader('eglRenderer')
+# plugin = None
+# if egl is not None:
+#     plugin = p.loadPlugin(egl.get_filename(), "_eglRendererPlugin")
+#     print('Using eglRenderer')
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
 p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
@@ -242,6 +242,6 @@ for j in range(N_CHUNKS):
     print("Saving chunk {} ({} total scenes). {} seconds elapsed.".format(j+1, (j+1) * CHUNK_SIZE, time.time() - start))
 print("TIME:", time.time() - start)
 
-if plugin is not None:
-    p.unloadPlugin(plugin)
+# if plugin is not None:
+#     p.unloadPlugin(plugin)
 p.disconnect()
