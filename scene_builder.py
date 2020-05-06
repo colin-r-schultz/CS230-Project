@@ -120,11 +120,11 @@ def build_scene():
         colorize(obj)
         bodies.append(obj)
 
-    for i in range(8):
-        p.addUserDebugLine([0, 0, i / 4], [SCENE_SIZE, 0, i / 4], [0, 0, 1])
-        p.addUserDebugLine([SCENE_SIZE, 0, i / 4], [SCENE_SIZE, SCENE_SIZE, i / 4], [0, 0, 1])
-        p.addUserDebugLine([SCENE_SIZE, SCENE_SIZE, i / 4], [0, SCENE_SIZE, i / 4], [0, 0, 1])
-        p.addUserDebugLine([0, SCENE_SIZE, i / 4], [0, 0, i / 4], [0, 0, 1])
+    # for i in range(8):
+    #     p.addUserDebugLine([0, 0, i / 4], [SCENE_SIZE, 0, i / 4], [0, 0, 1])
+    #     p.addUserDebugLine([SCENE_SIZE, 0, i / 4], [SCENE_SIZE, SCENE_SIZE, i / 4], [0, 0, 1])
+    #     p.addUserDebugLine([SCENE_SIZE, SCENE_SIZE, i / 4], [0, SCENE_SIZE, i / 4], [0, 0, 1])
+    #     p.addUserDebugLine([0, SCENE_SIZE, i / 4], [0, 0, i / 4], [0, 0, 1])
 
     return walls, map_label, bodies
     
@@ -219,7 +219,7 @@ p.configureDebugVisualizer(p.COV_ENABLE_WIREFRAME, 0)
 load_all_models()
 
 print("Starting...")
-M = 20000
+M = 40000
 CHUNK_SIZE = 200
 N_CHUNKS = M // CHUNK_SIZE
 start = time.time()
