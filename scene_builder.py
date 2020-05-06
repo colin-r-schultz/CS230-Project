@@ -7,6 +7,8 @@ import numpy as np
 import pkgutil
 import faulthandler
 import sys
+from PIL import Image
+import os
 
 faulthandler.enable()
 
@@ -23,8 +25,8 @@ WALL_HEIGHT = 8
 WALL_THICKNESS = 1
 MAX_WALL_INNESS = 2.5
 
-IMAGE_WIDTH = 192
-IMAGE_HEIGHT = 108
+IMAGE_WIDTH = 128# 192
+IMAGE_HEIGHT = 128# 108
 
 SHOTS_PER_SCENE = 64
 VIEW_DIM = 7
@@ -176,7 +178,7 @@ def get_image(view):
     pm = p.computeProjectionMatrixFOV(69.4, IMAGE_WIDTH / IMAGE_HEIGHT, 0.01, 2 * SCENE_SIZE)
     return p.getCameraImage(IMAGE_WIDTH, IMAGE_HEIGHT, vm, pm)
 
-def process_scene():
+def process_scene(path):
     walls, map_label, bodies = build_scene()
     map_label = get_map(map_label)
     orient = p.getQuaternionFromEuler([0, 0, random.random() * 2 * math.pi])
@@ -198,13 +200,13 @@ def process_scene():
         view = pack_viewpoint(pos, rot)
         
         w, h, rgb, depth, seg = get_image(view)
-        images[shots, :, :, :] = rgb[:,:,:3]
-        # plt.imshow(rgb)
-        # plt.show()
+        im  = Image.fromarray(rgb)
+        im.save(path + '/obs{}.png'.format(shots))
         views[shots, :] = view
         shots += 1
     for obj in bodies:
         p.removeBody(obj)
+    np.savez(path + '/labels.npz', map_label=map_label, views=views)
     return images, views, map_label
         
 def add_axis(arr):
@@ -223,23 +225,18 @@ p.configureDebugVisualizer(p.COV_ENABLE_WIREFRAME, 0)
 load_all_models()
 
 print("Starting...")
-M = 40000
+M = 20000
 CHUNK_SIZE = 200
 N_CHUNKS = M // CHUNK_SIZE
 start = time.time()
 for j in range(N_CHUNKS): 
-    image_dataset = np.zeros((CHUNK_SIZE, SHOTS_PER_SCENE, IMAGE_HEIGHT, IMAGE_WIDTH, 3), dtype=np.uint8)
-    view_dataset = np.zeros((CHUNK_SIZE, SHOTS_PER_SCENE, VIEW_DIM), dtype=np.float32)
-    map_dataset = np.zeros((CHUNK_SIZE, MAP_SIZE, MAP_SIZE), dtype=np.uint8)
+    chunkName = DATASET_PATH + '/chunk{}'.format(j)
+    os.mkdir(chunkName)
     for i in range(CHUNK_SIZE):
-        images, views, map_label =  process_scene()
-        image_dataset[i] = images
-        view_dataset[i] = views
-        map_dataset[i] = map_label
-    np.save(DATASET_PATH + '/image_dataset.npy', image_dataset)
-    np.save(DATASET_PATH + '/view_dataset.npy', view_dataset)
-    np.save(DATASET_PATH + '/map_dataset.npy', map_dataset)
-    print("Saving chunk {} ({} total scenes). {} seconds elapsed.".format(j+1, (j+1) * CHUNK_SIZE, time.time() - start))
+        sceneFolder = chunkName + '/scene{}'.format(i)
+        os.mkdir(sceneFolder)
+        process_scene(sceneFolder)
+    print("Chunk {} complete ({} total scenes). {} seconds elapsed.".format(j, (j+1)*200, time.time() - start))
 print("TIME:", time.time() - start)
 
 # if plugin is not None:
