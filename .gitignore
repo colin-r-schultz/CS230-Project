@@ -5,3 +5,7 @@ pybullettest.py
 example.py
 .DS_Store
 IKEA_models.zip
+__pycache__
+tensorboard
+data*
+checkpoints
