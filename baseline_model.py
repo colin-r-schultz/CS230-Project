@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from constants import *
+import sys
 
 NUM_INPUT_OBS = 16
 NUM_TEST_OBS = 16
@@ -142,22 +143,25 @@ train = create_dataset('datasets*')
 dev = create_dataset('dev')
 
 print('Creating model')
-input_obs = tf.keras.Input(shape=[NUM_INPUT_OBS]+IMG_SHAPE, name='input_observations')
-input_poses = tf.keras.Input(shape=[NUM_INPUT_OBS, VIEW_DIM], name='input_poses')
-unknown_images = tf.keras.Input(shape=[NUM_TEST_OBS]+IMG_SHAPE, name='unknown_images')
+if (len(sys.argv) > 1):
+    e2e_model = tf.keras.models.load_model('checkpoints/'+sys.argv[1])
+else:
+    input_obs = tf.keras.Input(shape=[NUM_INPUT_OBS]+IMG_SHAPE, name='input_observations')
+    input_poses = tf.keras.Input(shape=[NUM_INPUT_OBS, VIEW_DIM], name='input_poses')
+    unknown_images = tf.keras.Input(shape=[NUM_TEST_OBS]+IMG_SHAPE, name='unknown_images')
 
-embedding = RepresentationNetwork()([input_obs, input_poses])
-pose_estimates = LocalizationNetwork()([unknown_images, embedding])
-map_estimate = mapping_network()(embedding)
+    embedding = RepresentationNetwork()([input_obs, input_poses])
+    pose_estimates = LocalizationNetwork()([unknown_images, embedding])
+    map_estimate = mapping_network()(embedding)
 
-e2e_model = tf.keras.Model([input_obs, input_poses, unknown_images], [pose_estimates, map_estimate], name='end_to_end_model')
-e2e_model.compile(optimizer=tf.keras.optimizers.Adam(0.001), loss=['mse', 'binary_crossentropy'], loss_weights=[0.001, 1])
+    e2e_model = tf.keras.Model([input_obs, input_poses, unknown_images], [pose_estimates, map_estimate], name='end_to_end_model')
+    e2e_model.compile(optimizer=tf.keras.optimizers.Adam(0.001), loss=['mse', 'binary_crossentropy'], loss_weights=[0.01, 1])
 
 tb_callback = tf.keras.callbacks.TensorBoard(log_dir='tensorboard')
 cp_callback = tf.keras.callbacks.ModelCheckpoint('checkpoints/baseline_model_{epoch}', verbose=1)
 
 print('Training model')
-e2e_model.fit(train, epochs=3, callbacks=[tb_callback, cp_callback], verbose=1)
+e2e_model.fit(train, epochs=10, callbacks=[tb_callback, cp_callback], verbose=1)
 
 print('Evaluating model')
 e2e_model.evaluate(dev)
