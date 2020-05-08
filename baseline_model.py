@@ -126,13 +126,13 @@ class LocalizationNetwork(tf.keras.Model):
 
 def mapping_network():
     generator = tf.keras.Sequential([
-        tf.keras.layers.Dense(1024, activation='relu', input_shape=[EMBEDDING_SIZE]),
+        tf.keras.layers.Dense(1024, activation='relu'),
         tf.keras.layers.Dense(4096, activation='relu'),
-        tf.keras.layers.Reshape([16, 16, 8]),
+        tf.keras.layers.Reshape([16, 16, 8], name='reshape1'),
         tf.keras.layers.Conv2DTranspose(128, 4, 2, activation='relu', padding='same'),
         tf.keras.layers.Conv2DTranspose(128, 4, 2, activation='relu', padding='same'),
         tf.keras.layers.Conv2D(1, 3, 1, activation='sigmoid', padding='same'),
-        tf.keras.layers.Reshape([MAP_SIZE, MAP_SIZE])
+        tf.keras.layers.Reshape([MAP_SIZE, MAP_SIZE], name='reshape2')
     ], name='mapping_net')
     return generator
 
@@ -151,7 +151,7 @@ pose_estimates = LocalizationNetwork()([unknown_images, embedding])
 map_estimate = mapping_network()(embedding)
 
 e2e_model = tf.keras.Model([input_obs, input_poses, unknown_images], [pose_estimates, map_estimate], name='end_to_end_model')
-e2e_model.compile(optimizer=tf.keras.optimizers.Adam(0.001), loss=['mse', 'binary_crossentropy'])
+e2e_model.compile(optimizer=tf.keras.optimizers.Adam(0.001), loss=['mse', 'binary_crossentropy'], metrics=['mse', 'binary_crossentropy'])
 
 tb_callback = tf.keras.callbacks.TensorBoard(log_dir='tensorboard')
 cp_callback = tf.keras.callbacks.ModelCheckpoint('checkpoints/baseline_model_{epoch}', verbose=1)
