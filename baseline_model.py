@@ -128,7 +128,7 @@ def mapping_network():
     generator = tf.keras.Sequential([
         tf.keras.layers.Dense(1024, activation='relu'),
         tf.keras.layers.Dense(4096, activation='relu'),
-        tf.keras.layers.Reshape([16, 16, 8], name='reshape1'),
+        tf.keras.layers.Reshape([16, 16, 16], name='reshape1'),
         tf.keras.layers.Conv2DTranspose(128, 4, 2, activation='relu', padding='same'),
         tf.keras.layers.Conv2DTranspose(128, 4, 2, activation='relu', padding='same'),
         tf.keras.layers.Conv2D(1, 3, 1, activation='sigmoid', padding='same'),
