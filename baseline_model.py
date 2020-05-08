@@ -151,7 +151,7 @@ pose_estimates = LocalizationNetwork()([unknown_images, embedding])
 map_estimate = mapping_network()(embedding)
 
 e2e_model = tf.keras.Model([input_obs, input_poses, unknown_images], [pose_estimates, map_estimate], name='end_to_end_model')
-e2e_model.compile(optimizer=tf.keras.optimizers.Adam(0.001), loss=['mse', 'binary_crossentropy'], metrics=['mse', 'binary_crossentropy'])
+e2e_model.compile(optimizer=tf.keras.optimizers.Adam(0.001), loss=['mse', 'binary_crossentropy'], loss_weights=[0.001, 1])
 
 tb_callback = tf.keras.callbacks.TensorBoard(log_dir='tensorboard')
 cp_callback = tf.keras.callbacks.ModelCheckpoint('checkpoints/baseline_model_{epoch}', verbose=1)
