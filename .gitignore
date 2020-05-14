@@ -7,6 +7,7 @@ example.py
 IKEA_models.zip
 __pycache__
 tensorboard
-data*
+data
+data.zip
 checkpoints
-visuals
+visuals*
