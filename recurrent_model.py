@@ -4,9 +4,9 @@ import dataloader
 from constants import *
 import random
 
-NUM_INPUT_OBS = 32
+NUM_INPUT_OBS = 16
 dataloader.NUM_INPUT_OBS = NUM_INPUT_OBS
-dataloader.NUM_TEST_OBS = 16
+dataloader.NUM_TEST_OBS = 1
 
 EMBEDDING_SIZE = 256
 
@@ -127,9 +127,9 @@ for epoch in range(EPOCHS):
     print('Starting epoch {}.'.format(epoch))
 
     for batch, ((inp_obs, inp_vp, obs), (vp, map_label))in enumerate(train_data):
-        sequence_length = int(random.random() * 16 + 17)
-        inp_obs = inp_obs[:,:sequence_length]
-        inp_vp = inp_vp[:,:sequence_length]
+        # sequence_length = int(random.random() * 8 + 9)
+        # inp_obs = inp_obs[:,:sequence_length]
+        # inp_vp = inp_vp[:,:sequence_length]
         with tf.GradientTape() as tape:
             embedding = representation_net([inp_obs, inp_vp])
             map_estimate = mapping_net(embedding)
