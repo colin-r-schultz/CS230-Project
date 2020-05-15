@@ -138,33 +138,32 @@ print(e2e_model(fake_data).numpy())
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
 
-e2e_model.compile(optimizer=optimizer, loss='binary_crossentropy')
+# e2e_model.compile(optimizer=optimizer, loss='binary_crossentropy')
 
 print('Training')
-tb_callback = tf.keras.callbacks.TensorBoard(log_dir='tensorboard')
-cp_callback = tf.keras.callbacks.ModelCheckpoint('checkpoints/recurrent_model_{epoch}', verbose=1, save_weights_only=True)
+# tb_callback = tf.keras.callbacks.TensorBoard(log_dir='tensorboard')
+# cp_callback = tf.keras.callbacks.ModelCheckpoint('checkpoints/recurrent_model_{epoch}', verbose=1, save_weights_only=True)
 EPOCHS = 10
-e2e_model.fit(train_data, epochs=EPOCHS, verbose=2, callbacks=[tb_callback, cp_callback])
-# for epoch in range(EPOCHS):
-#     print('Starting epoch {}.'.format(epoch))
+# e2e_model.fit(train_data, epochs=EPOCHS, verbose=2, callbacks=[tb_callback, cp_callback])
+for epoch in range(EPOCHS):
+    print('Starting epoch {}.'.format(epoch))
 
-#     for batch, ((inp_obs, inp_vp, obs), (vp, map_label))in enumerate(train_data):
-#         # sequence_length = int(random.random() * 8 + 9)
-#         # inp_obs = inp_obs[:,:sequence_length]
-#         # inp_vp = inp_vp[:,:sequence_length]
-#         with tf.GradientTape() as tape:
-#             embedding = representation_net([inp_obs, inp_vp])
-#             map_estimate = mapping_net(embedding)
-#             loss = tf.reduce_mean(tf.keras.losses.binary_crossentropy(map_label, map_estimate))
-#         weights = representation_net.trainable_variables + mapping_net.trainable_variables
-#         grads = tape.gradient(loss, weights)
-#         optimizer.apply_gradients(zip(grads, weights))
-#         if batch % 100 == 0:
-#             print("Loss during batch {}: {}".format(batch, float(loss)))
+    for batch, ((inp_obs, inp_vp), map_label)in enumerate(train_data):
+        # sequence_length = int(random.random() * 8 + 9)
+        # inp_obs = inp_obs[:,:sequence_length]
+        # inp_vp = inp_vp[:,:sequence_length]
+        with tf.GradientTape() as tape:
+            map_estimate = e2e_model([inp_obs, inp_vp])
+            loss = tf.reduce_mean(tf.keras.losses.binary_crossentropy(map_label, map_estimate))
+        weights = representation_net.trainable_variables + mapping_net.trainable_variables
+        grads = tape.gradient(loss, weights)
+        optimizer.apply_gradients(zip(grads, weights))
+        if batch % 100 == 0:
+            print("Loss during batch {}: {}".format(batch, float(loss)))
 
-#     print('Saving Models')
-#     representation_net.save_weights('checkpoints/recurrent/repnet_{}.cpkt'.format(epoch))
-#     mapping_net.save_weights('checkpoints/recurrent/repnet_{}.cpkt'.format(epoch))
+    print('Saving Models')
+    representation_net.save_weights('checkpoints/recurrent/repnet_{}.cpkt'.format(epoch))
+    mapping_net.save_weights('checkpoints/recurrent/repnet_{}.cpkt'.format(epoch))
 print('Evaluating model')
 e2e_model.evaluate(dev_data, verbose=1)
 print('Done!')
