@@ -3,16 +3,18 @@ import tensorflow as tf
 import dataloader
 from constants import *
 
-dataloader.NUM_INPUT_OBS = 32
+NUM_INPUT_OBS = 32
+dataloader.NUM_INPUT_OBS = NUM_INPUT_OBS
 dataloader.NUM_TEST_OBS = 16
 
 EMBEDDING_SIZE = 256
 
 class TileConvNet(tf.keras.layers.Layer):
-    def __init__(self, tile_dims, output_dims, **kwargs):
-        super(TileConvNet, self).__init__(**kwargs)
+    def __init__(self, tile_dims, output_dims, pretrained=False):
+        super(TileConvNet, self).__init__()
         self.tile_dims = tile_dims
-        mobile_net = tf.keras.applications.MobileNetV2(input_shape=IMG_SHAPE, include_top=False, weights='imagenet')
+        weights = 'imagenet' if pretrained else None
+        mobile_net = tf.keras.applications.MobileNetV2(input_shape=IMG_SHAPE, include_top=False, weights=weights)
         self.layers = mobile_net.layers
         self.intermediate_conv = tf.keras.layers.Conv2D(192, 1, 1, name='intermediate_conv')
         self.add_layers = ['block_1_project_BN', 'block_3_project_BN', 'block_4_add', 'block_6_project_BN', 
@@ -41,9 +43,9 @@ class TileConvNet(tf.keras.layers.Layer):
         return x
 
 class RepresentationNetwork(tf.keras.Model):
-    def __init__(self):
+    def __init__(self, pretrained=False):
         super(RepresentationNetwork, self).__init__()
-        self.encoder = TileConvNet(VIEW_DIM, 1024)
+        self.encoder = TileConvNet(VIEW_DIM, 1024, pretrained=pretrained)
         self.relu = tf.keras.layers.ReLU()
         self.dense = tf.keras.layers.Dense(512, activation='relu')
         self.embedding_dense = tf.keras.layers.Dense(EMBEDDING_SIZE)
@@ -61,9 +63,9 @@ class RepresentationNetwork(tf.keras.Model):
         return x
 
 class LocalizationNetwork(tf.keras.Model):
-    def __init__(self):
+    def __init__(self, pretrained=False):
         super(LocalizationNetwork, self).__init__()
-        self.encoder = TileConvNet(EMBEDDING_SIZE, VIEW_DIM)
+        self.encoder = TileConvNet(EMBEDDING_SIZE, VIEW_DIM, pretrained=pretrained)
         self.relu = tf.keras.layers.ReLU()
 
     def call(self, inputs):
@@ -90,3 +92,41 @@ def mapping_network():
     ], name='mapping_net')
     return generator
 
+BATCH_SIZE = 32
+print('Creating datasets')
+train_data = dataloader.create_dataset('datasets*', batch_size=BATCH_SIZE)
+dev_data = dataloader.create_dataset('dev', batch_size=BATCH_SIZE)
+
+print('Creating models')
+representation_net = RepresentationNetwork(True)
+mapping_net = mapping_network()
+
+optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
+
+print('Training')
+EPOCHS = 10
+for epoch in range(EPOCHS):
+    print('Starting epoch {}.'.format(epoch))
+
+    for batch, ((inp_obs, inp_vp, obs), (vp, map_label))in enumerate(train_data):
+        with tf.GradientTape() as tape:
+            embedding = tf.zeros([BATCH_SIZE, EMBEDDING_SIZE])
+            loss = tf.zeros([])
+            for i in range(NUM_INPUT_OBS):
+                image = tf.reshape(inp_obs[:,i], [-1] + IMG_SHAPE)
+                pose = tf.reshape(inp_vp[:,i], [-1, VIEW_DIM])
+                embedding = representation_net([image, pose, embedding])
+                if i > 15 and (i + 1) % 4 == 0:
+                    map_estimate = mapping_net(embedding)
+                    loss += tf.keras.losses.binary_crossentropy(map_label, map_estimate) / 4
+        weights = [representation_net.trainable_variables, mapping_net.trainable_variables]
+        grads = tape.gradient(loss, weights)
+        optimizer.apply_gradients(zip(grads, weights))
+        if batch % 100 == 0:
+            print("Loss during batch {}: {}".format(batch, float(loss)))
+
+    print('Saving Models')
+    representation_net.save_weights('checkpoints/recurrent/repnet_{}.cpkt'.format(epoch))
+    mapping_net.save_weights('checkpoints/recurrent/repnet_{}.cpkt'.format(epoch))
+
+print('Done!')
