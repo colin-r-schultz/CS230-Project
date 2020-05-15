@@ -125,15 +125,15 @@ print('Creating models')
 img_input = tf.keras.Input([None] + IMG_SHAPE)
 pose_input = tf.keras.Input([None, VIEW_DIM])
 representation_net = representation_network(True)
-representation_net.build(([None] + IMG_SHAPE, [None, VIEW_DIM]))
+representation_net.build(([None, None] + IMG_SHAPE, [None, None, VIEW_DIM]))
 mapping_net = mapping_network()
-mapping_net.build([EMBEDDING_SIZE])
+mapping_net.build([None, EMBEDDING_SIZE])
 
 embedding = representation_net([img_input, pose_input])
 map_estimate = mapping_net(embedding)
 
 e2e_model = tf.keras.Model([img_input, pose_input], map_estimate)
-e2e_model.build(([None] + IMG_SHAPE, [None, VIEW_DIM]))
+e2e_model.build(([None, None] + IMG_SHAPE, [None, None, VIEW_DIM]))
 optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
 e2e_model.compile(optimizer=optimizer, loss='binary_crossentropy')
 
