@@ -125,16 +125,16 @@ print('Creating models')
 fake_data = [tf.random.uniform([BATCH_SIZE, NUM_INPUT_OBS] + IMG_SHAPE, minval=-1, maxval=1), 
 tf.random.uniform([BATCH_SIZE, NUM_INPUT_OBS, VIEW_DIM], minval=-1, maxval=1)]
 
-img_input = tf.keras.Input([None] + IMG_SHAPE)
-pose_input = tf.keras.Input([None, VIEW_DIM])
+# img_input = tf.keras.Input([None] + IMG_SHAPE)
+# pose_input = tf.keras.Input([None, VIEW_DIM])
 representation_net = representation_network(True)
 mapping_net = mapping_network()
 
-embedding = representation_net([img_input, pose_input])
-map_estimate = mapping_net(embedding)
+# embedding = representation_net([img_input, pose_input])
+# map_estimate = mapping_net(embedding)
 
-e2e_model = tf.keras.Model([img_input, pose_input], map_estimate)
-print(e2e_model(fake_data).numpy())
+# e2e_model = tf.keras.Model([img_input, pose_input], map_estimate)
+# print(e2e_model(fake_data).numpy())
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
 
@@ -148,22 +148,23 @@ EPOCHS = 10
 for epoch in range(EPOCHS):
     print('Starting epoch {}.'.format(epoch))
 
-    for batch, ((inp_obs, inp_vp), map_label)in enumerate(train_data):
+    for batch, (inputs, map_label)in enumerate(train_data):
         # sequence_length = int(random.random() * 8 + 9)
         # inp_obs = inp_obs[:,:sequence_length]
         # inp_vp = inp_vp[:,:sequence_length]
         with tf.GradientTape() as tape:
-            map_estimate = e2e_model([inp_obs, inp_vp])
+            embedding = representation_net(inputs)
+            map_estimate = mapping_net(embedding)# e2e_model([inp_obs, inp_vp])
             loss = tf.reduce_mean(tf.keras.losses.binary_crossentropy(map_label, map_estimate))
         weights = representation_net.trainable_variables + mapping_net.trainable_variables
         grads = tape.gradient(loss, weights)
         optimizer.apply_gradients(zip(grads, weights))
-        if batch % 100 == 0:
+        if batch % 200 == 0:
             print("Loss during batch {}: {}".format(batch, float(loss)))
 
     print('Saving Models')
     representation_net.save_weights('checkpoints/recurrent/repnet_{}.cpkt'.format(epoch))
     mapping_net.save_weights('checkpoints/recurrent/repnet_{}.cpkt'.format(epoch))
-print('Evaluating model')
-e2e_model.evaluate(dev_data, verbose=1)
+# print('Evaluating model')
+# e2e_model.evaluate(dev_data, verbose=1)
 print('Done!')
