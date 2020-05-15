@@ -92,7 +92,7 @@ def mapping_network():
     ], name='mapping_net')
     return generator
 
-BATCH_SIZE = 16
+BATCH_SIZE = 8
 print('Creating datasets')
 train_data = dataloader.create_dataset('datasets*', batch_size=BATCH_SIZE)
 dev_data = dataloader.create_dataset('dev', batch_size=BATCH_SIZE)
