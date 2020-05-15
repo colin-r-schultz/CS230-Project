@@ -92,7 +92,7 @@ def mapping_network():
     ], name='mapping_net')
     return generator
 
-BATCH_SIZE = 32
+BATCH_SIZE = 16
 print('Creating datasets')
 train_data = dataloader.create_dataset('datasets*', batch_size=BATCH_SIZE)
 dev_data = dataloader.create_dataset('dev', batch_size=BATCH_SIZE)
@@ -119,6 +119,7 @@ for epoch in range(EPOCHS):
                 if i > 15 and (i + 1) % 4 == 0:
                     map_estimate = mapping_net(embedding)
                     loss += tf.keras.losses.binary_crossentropy(map_label, map_estimate) / 4
+        loss = tf.reduce_mean(loss)
         weights = representation_net.trainable_variables + mapping_net.trainable_variables
         grads = tape.gradient(loss, weights)
         optimizer.apply_gradients(zip(grads, weights))
