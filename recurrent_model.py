@@ -131,6 +131,7 @@ embedding = representation_net([img_input, pose_input])
 map_estimate = mapping_net(embedding)
 
 e2e_model = tf.keras.Model([img_input, pose_input], map_estimate)
+e2e_model.build(([None] + IMG_SHAPE, [None, VIEW_DIM]))
 optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
 e2e_model.compile(optimizer=optimizer, loss='binary_crossentropy')
 
