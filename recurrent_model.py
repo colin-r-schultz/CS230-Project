@@ -130,8 +130,6 @@ for epoch in range(EPOCHS):
         sequence_length = int(random.random() * 16 + 17)
         inp_obs = inp_obs[:,:sequence_length]
         inp_vp = inp_vp[:,:sequence_length]
-        print(inp_obs.shape)
-        print(inp_vp.shape)
         with tf.GradientTape() as tape:
             embedding = representation_net([inp_obs, inp_vp])
             map_estimate = mapping_net(embedding)
