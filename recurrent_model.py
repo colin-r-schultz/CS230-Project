@@ -122,6 +122,8 @@ dev_data = dataloader.create_dataset('dev', batch_size=BATCH_SIZE).map(get_relev
 
 print('Creating models')
 
+fake_data = [tf.zeros([BATCH_SIZE, NUM_INPUT_OBS] + IMG_SHAPE), tf.zeros([BATCH_SIZE, NUM_INPUT_OBS, VIEW_DIM])]
+
 img_input = tf.keras.Input([None] + IMG_SHAPE)
 pose_input = tf.keras.Input([None, VIEW_DIM])
 representation_net = representation_network(True)
@@ -134,6 +136,8 @@ map_estimate = mapping_net(embedding)
 
 e2e_model = tf.keras.Model([img_input, pose_input], map_estimate)
 e2e_model.build(([None, None] + IMG_SHAPE, [None, None, VIEW_DIM]))
+e2e_model(fake_data)
+
 optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
 e2e_model.compile(optimizer=optimizer, loss='binary_crossentropy')
 
