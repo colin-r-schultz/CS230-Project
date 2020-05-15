@@ -110,38 +110,55 @@ def mapping_network():
     ], name='mapping_net')
     return generator
 
+def get_relevant(inputs, labels):
+    inp_obs, inp_vp, obs = inputs
+    vp, map_label = labels
+    return (inp_obs, inp_vp), map_label
+
 BATCH_SIZE = 16
 print('Creating datasets')
-train_data = dataloader.create_dataset('datasets*', batch_size=BATCH_SIZE)
-dev_data = dataloader.create_dataset('dev', batch_size=BATCH_SIZE)
+train_data = dataloader.create_dataset('datasets*', batch_size=BATCH_SIZE).map(get_relevant)
+dev_data = dataloader.create_dataset('dev', batch_size=BATCH_SIZE).map(get_relevant)
 
 print('Creating models')
+
+img_input = tf.keras.Input([None] + IMG_SHAPE)
+pose_input = tf.keras.Input([None, VIEW_DIM])
 representation_net = representation_network(True)
 mapping_net = mapping_network()
 
+embedding = representation_net([img_input, pose_input])
+map_estimate = mapping_net(embedding)
+
+e2e_model = tf.keras.Model([img_input, pose_input], map_estimate)
 optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
+e2e_model.compile(optimizer=optimizer, loss='binary_crossentropy')
 
 print('Training')
+tb_callback = tf.keras.callbacks.TensorBoard(log_dir='tensorboard')
+cp_callback = tf.keras.callbacks.ModelCheckpoint('checkpoints/recurrent_model_{epoch}', verbose=1, save_weights_only=True)
 EPOCHS = 10
-for epoch in range(EPOCHS):
-    print('Starting epoch {}.'.format(epoch))
+e2e_model.fit(train_data, epochs=EPOCHS, verbose=2, callbacks=[tb_callback, cp_callback])
+# for epoch in range(EPOCHS):
+#     print('Starting epoch {}.'.format(epoch))
 
-    for batch, ((inp_obs, inp_vp, obs), (vp, map_label))in enumerate(train_data):
-        # sequence_length = int(random.random() * 8 + 9)
-        # inp_obs = inp_obs[:,:sequence_length]
-        # inp_vp = inp_vp[:,:sequence_length]
-        with tf.GradientTape() as tape:
-            embedding = representation_net([inp_obs, inp_vp])
-            map_estimate = mapping_net(embedding)
-            loss = tf.reduce_mean(tf.keras.losses.binary_crossentropy(map_label, map_estimate))
-        weights = representation_net.trainable_variables + mapping_net.trainable_variables
-        grads = tape.gradient(loss, weights)
-        optimizer.apply_gradients(zip(grads, weights))
-        if batch % 100 == 0:
-            print("Loss during batch {}: {}".format(batch, float(loss)))
+#     for batch, ((inp_obs, inp_vp, obs), (vp, map_label))in enumerate(train_data):
+#         # sequence_length = int(random.random() * 8 + 9)
+#         # inp_obs = inp_obs[:,:sequence_length]
+#         # inp_vp = inp_vp[:,:sequence_length]
+#         with tf.GradientTape() as tape:
+#             embedding = representation_net([inp_obs, inp_vp])
+#             map_estimate = mapping_net(embedding)
+#             loss = tf.reduce_mean(tf.keras.losses.binary_crossentropy(map_label, map_estimate))
+#         weights = representation_net.trainable_variables + mapping_net.trainable_variables
+#         grads = tape.gradient(loss, weights)
+#         optimizer.apply_gradients(zip(grads, weights))
+#         if batch % 100 == 0:
+#             print("Loss during batch {}: {}".format(batch, float(loss)))
 
-    print('Saving Models')
-    representation_net.save_weights('checkpoints/recurrent/repnet_{}.cpkt'.format(epoch))
-    mapping_net.save_weights('checkpoints/recurrent/repnet_{}.cpkt'.format(epoch))
-
+#     print('Saving Models')
+#     representation_net.save_weights('checkpoints/recurrent/repnet_{}.cpkt'.format(epoch))
+#     mapping_net.save_weights('checkpoints/recurrent/repnet_{}.cpkt'.format(epoch))
+print('Evaluating model')
+e2e_model.evaluate(dev_data, verbose=1)
 print('Done!')
