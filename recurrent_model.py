@@ -119,7 +119,7 @@ for epoch in range(EPOCHS):
                 if i > 15 and (i + 1) % 4 == 0:
                     map_estimate = mapping_net(embedding)
                     loss += tf.keras.losses.binary_crossentropy(map_label, map_estimate) / 4
-        weights = [representation_net.trainable_variables, mapping_net.trainable_variables]
+        weights = representation_net.trainable_variables + mapping_net.trainable_variables
         grads = tape.gradient(loss, weights)
         optimizer.apply_gradients(zip(grads, weights))
         if batch % 100 == 0:
