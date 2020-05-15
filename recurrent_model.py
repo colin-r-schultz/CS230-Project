@@ -127,7 +127,8 @@ fake_data = [tf.zeros([BATCH_SIZE, NUM_INPUT_OBS] + IMG_SHAPE), tf.zeros([BATCH_
 img_input = tf.keras.Input([None] + IMG_SHAPE)
 pose_input = tf.keras.Input([None, VIEW_DIM])
 representation_net = representation_network(True)
-representation_net.build(([None, None] + IMG_SHAPE, [None, None, VIEW_DIM]))
+representation_net(fake_data)
+# representation_net.build(([None, None] + IMG_SHAPE, [None, None, VIEW_DIM]))
 mapping_net = mapping_network()
 mapping_net.build([None, EMBEDDING_SIZE])
 
