@@ -4,11 +4,11 @@ import dataloader
 from constants import *
 import random
 
-NUM_INPUT_OBS = 28
+NUM_INPUT_OBS = 24
 dataloader.NUM_INPUT_OBS = NUM_INPUT_OBS
 dataloader.NUM_TEST_OBS = 1
 
-EMBEDDING_SIZE = 256
+EMBEDDING_SIZE = 512
 
 class TileConvNet(tf.keras.layers.Layer):
     def __init__(self, tile_dims, output_dims, pretrained=False):
@@ -100,13 +100,10 @@ class LocalizationNetwork(tf.keras.Model):
 
 def mapping_network():
     generator = tf.keras.Sequential([
-        tf.keras.layers.Dense(1024, activation='relu'),
         tf.keras.layers.Dense(4096, activation='relu'),
-        tf.keras.layers.Reshape([16, 16, 16], name='reshape1'),
-        tf.keras.layers.Conv2DTranspose(128, 4, 2, activation='relu', padding='same'),
-        tf.keras.layers.Conv2DTranspose(128, 4, 2, activation='relu', padding='same'),
-        tf.keras.layers.Conv2D(1, 3, 1, activation='sigmoid', padding='same'),
-        tf.keras.layers.Reshape([MAP_SIZE, MAP_SIZE], name='reshape2')
+        tf.keras.layers.Dense(4096, activation='relu'),
+        tf.keras.layers.Dense(4096, activation='sigmoid'),
+        tf.keras.layers.Reshape([MAP_SIZE, MAP_SIZE], name='reshape')
     ], name='mapping_net')
     return generator
 
@@ -163,8 +160,8 @@ for epoch in range(EPOCHS):
             print("Loss during batch {}: {}".format(batch, float(loss)))
 
     print('Saving Models')
-    representation_net.save_weights('checkpoints/recurrent/repnet_{}.cpkt'.format(epoch))
-    mapping_net.save_weights('checkpoints/recurrent/mapnet_{}.cpkt'.format(epoch))
+    representation_net.save_weights('checkpoints/recurrent_fc/repnet_{}.cpkt'.format(epoch))
+    mapping_net.save_weights('checkpoints/recurrent_fc/mapnet_{}.cpkt'.format(epoch))
 # print('Evaluating model')
 # e2e_model.evaluate(dev_data, verbose=1)
 print('Done!')
