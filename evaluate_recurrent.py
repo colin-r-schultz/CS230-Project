@@ -1,15 +1,59 @@
-import numpy as np
 import tensorflow as tf
-import dataloader
+import numpy as np
 from constants import *
-import random
-import sys
+import os
+import shutil
 
 NUM_INPUT_OBS = 24
-dataloader.NUM_INPUT_OBS = NUM_INPUT_OBS
-dataloader.NUM_TEST_OBS = 1
-
+NUM_TEST_OBS = 1
 EMBEDDING_SIZE = 512
+
+
+def open_npz(path):
+    with np.load(path.numpy().decode() + '/labels.npz') as npz:
+        map_label = npz['map_label']
+        views = npz['views']
+    perm = np.random.permutation(SHOTS_PER_SCENE)
+    views = views[perm]
+    assert (views.shape == (SHOTS_PER_SCENE, VIEW_DIM))
+    return [map_label, views, perm]
+
+def parse_scene(path):
+    [map_label, views, perm] = tf.py_function(open_npz, [path], [tf.uint8, tf.float32, tf.int32])
+    filenames = path + '/obs' + tf.as_string(perm) + '.png'
+    image_list = []
+    for i in range(SHOTS_PER_SCENE):
+        decoded = tf.io.decode_png(tf.io.read_file(filenames[i]), channels=3)
+        image = tf.image.convert_image_dtype(decoded, tf.float32)
+        image = (image * 2) - 1
+        image_list.append(image)
+    images = tf.stack(image_list)
+
+    views = (views - VIEW_MEANS) / VIEW_VARIATION
+    map_label = tf.cast(map_label, tf.float32)
+    return images[:NUM_INPUT_OBS], views[:NUM_INPUT_OBS], images[NUM_INPUT_OBS:NUM_INPUT_OBS+NUM_TEST_OBS], views[NUM_INPUT_OBS:NUM_INPUT_OBS+NUM_TEST_OBS], map_label, perm, path
+
+def ensure_shapes(inp_obs, inp_vp, obs, vp, map_label, perm, path):
+    inp_obs.set_shape([NUM_INPUT_OBS] + IMG_SHAPE)
+    inp_vp.set_shape([NUM_INPUT_OBS, VIEW_DIM])
+    map_label.set_shape([MAP_SIZE, MAP_SIZE])
+    obs.set_shape([NUM_TEST_OBS] + IMG_SHAPE)
+    vp.set_shape([NUM_TEST_OBS, VIEW_DIM])
+    perm.set_shape([SHOTS_PER_SCENE])
+    return inp_obs, inp_vp, obs, vp, map_label, perm, path
+
+def tuplify(inp_obs, inp_vp, obs, vp, map_label, perm, path):
+    return (inp_obs, inp_vp, obs), (vp, map_label), (perm, path)
+
+def create_dataset(path):
+    list_scenes = tf.data.Dataset.list_files('data/{}/chunk*/scene*'.format(path)).shuffle(buffer_size=128)
+    dataset = list_scenes.map(parse_scene).map(ensure_shapes).map(tuplify)
+    dataset = dataset.batch(1)
+
+    return dataset
+
+def get_single(tensor):
+    return tensor.numpy()[0]
 
 class TileConvNet(tf.keras.layers.Layer):
     def __init__(self, tile_dims, output_dims, pretrained=False):
@@ -108,65 +152,37 @@ def mapping_network():
     ], name='mapping_net')
     return generator
 
-def get_relevant(inputs, labels):
-    inp_obs, inp_vp, obs = inputs
-    vp, map_label = labels
-    return (inp_obs, inp_vp), map_label
-
-BATCH_SIZE = 16
-print('Creating datasets')
-train_data = dataloader.create_dataset('datasets*', batch_size=BATCH_SIZE).map(get_relevant)
-dev_data = dataloader.create_dataset('dev', batch_size=BATCH_SIZE).map(get_relevant)
-
-print('Creating models')
-
-
-# img_input = tf.keras.Input([None] + IMG_SHAPE)
-# pose_input = tf.keras.Input([None, VIEW_DIM])
 representation_net = representation_network(True)
 mapping_net = mapping_network()
 
-load = 0
-if len(sys.argv) > 1:
-    load = int(sys.argv[1])
-    representation_net.load_weights('checkpoints/recurrent_fc/repnet_{}.cpkt'.format(load))
-    mapping_net.load_weights('checkpoints/recurrent_fc/mapnet_{}.cpkt'.format(load))
+representation_net.load_weights('checkpoints/recurrent_fc/repnet_{}.cpkt'.format(19))
+mapping_net.load_weights('checkpoints/recurrent_fc/mapnet_{}.cpkt'.format(19))
 
-# embedding = representation_net([img_input, pose_input])
-# map_estimate = mapping_net(embedding)
+os.mkdir('visuals')
+dev_set = create_dataset('dev')
+for f in dev_set.take(1):
+    pass
+inputs, labels, metadata = f
+inp_obs, inp_vp, obs = inputs
+embedding = representation_net([inp_obs, inp_vp])
+map_estimate = mapping_net(embedding)
+perm, path = metadata
+vp_labels, map_label = labels
+input_vps = get_single(inputs[1])
 
-# e2e_model = tf.keras.Model([img_input, pose_input], map_estimate)
-# print(e2e_model(fake_data).numpy())
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
+strpath = get_single(path).decode()
+perm = get_single(perm)
 
-# e2e_model.compile(optimizer=optimizer, loss='binary_crossentropy')
+def move_images_to_folder(path, folder, array):
+    os.mkdir(folder)
+    for i in range(len(array)):
+        fname = '/obs{}.png'.format(array[i])
+        src = path + fname
+        dst = folder + fname
+        shutil.copyfile(src, dst)
 
-print('Training')
-# tb_callback = tf.keras.callbacks.TensorBoard(log_dir='tensorboard')
-# cp_callback = tf.keras.callbacks.ModelCheckpoint('checkpoints/recurrent_model_{epoch}', verbose=1, save_weights_only=True)
-EPOCHS = 10
-# e2e_model.fit(train_data, epochs=EPOCHS, verbose=2, callbacks=[tb_callback, cp_callback])
-for epoch in range(1, EPOCHS+1):
-    print('Starting epoch {}.'.format(epoch))
-
-    for batch, (inputs, map_label)in enumerate(train_data):
-        # sequence_length = int(random.random() * 8 + 9)
-        # inp_obs = inp_obs[:,:sequence_length]
-        # inp_vp = inp_vp[:,:sequence_length]
-        with tf.GradientTape() as tape:
-            embedding = representation_net(inputs)
-            map_estimate = mapping_net(embedding)# e2e_model([inp_obs, inp_vp])
-            loss = tf.reduce_mean(tf.keras.losses.binary_crossentropy(map_label, map_estimate))
-        weights = representation_net.trainable_variables + mapping_net.trainable_variables
-        grads = tape.gradient(loss, weights)
-        optimizer.apply_gradients(zip(grads, weights))
-        if batch % 200 == 0:
-            print("Loss during batch {}: {}".format(batch, float(loss)))
-
-    print('Saving Models')
-    representation_net.save_weights('checkpoints/recurrent_fc/repnet_{}.cpkt'.format(epoch + load))
-    mapping_net.save_weights('checkpoints/recurrent_fc/mapnet_{}.cpkt'.format(epoch + load))
-# print('Evaluating model')
-# e2e_model.evaluate(dev_data, verbose=1)
-print('Done!')
+move_images_to_folder(strpath, 'visuals/given_images', perm[:NUM_INPUT_OBS])
+move_images_to_folder(strpath, 'visuals/unknown_images', perm[NUM_INPUT_OBS:NUM_INPUT_OBS+NUM_TEST_OBS])
+np.savez('visuals/data.npz', perm=perm, path=strpath, input_vps=input_vps, map_estimate=map_estimate[0],
+    map_label=get_single(map_label), label_vps=get_single(vp_labels))

@@ -10,4 +10,4 @@ tensorboard
 data
 data.zip
 checkpoints
-visuals*
+*visuals*
