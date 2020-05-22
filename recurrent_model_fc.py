@@ -121,52 +121,50 @@ dev_data = dataloader.create_dataset('dev', batch_size=BATCH_SIZE).map(get_relev
 print('Creating models')
 
 
-# img_input = tf.keras.Input([None] + IMG_SHAPE)
-# pose_input = tf.keras.Input([None, VIEW_DIM])
 representation_net = representation_network(True)
 mapping_net = mapping_network()
 
 load = 0
 if len(sys.argv) > 1:
     load = int(sys.argv[1])
-    representation_net.load_weights('checkpoints/recurrent_fc/repnet_{}.cpkt'.format(load))
-    mapping_net.load_weights('checkpoints/recurrent_fc/mapnet_{}.cpkt'.format(load))
+    representation_net.load_weights('checkpoints/recurrent_fc_v2/repnet_{}.cpkt'.format(load))
+    mapping_net.load_weights('checkpoints/recurrent_fc_v2/mapnet_{}.cpkt'.format(load))
 
-# embedding = representation_net([img_input, pose_input])
-# map_estimate = mapping_net(embedding)
 
-# e2e_model = tf.keras.Model([img_input, pose_input], map_estimate)
-# print(e2e_model(fake_data).numpy())
+loss_filter = tf.ones([3, 3, 1, 1])
+
+def loss_fn(y_true, y_pred, weight=16):
+    y_true = tf.reshape(y_true, [-1, MAP_SIZE, MAP_SIZE, 1])
+    y_pred = tf.reshape(y_pred, [-1, MAP_SIZE, MAP_SIZE, 1])
+    unweighted_loss = tf.keras.losses.binary_crossentropy(y_true, y_pred)
+    conv = tf.nn.convolution(y_true, loss_filter, padding='SAME')
+    reshaped = tf.reshape(conv, [-1, MAP_SIZE, MAP_SIZE])
+    mask = tf.cast(tf.math.logical_and(reshaped < 8.5, reshaped > 0.5), dtype=tf.float32)
+    weighted_mask = mask * (weight - 1) + 1
+    weighted_loss = weighted_mask * unweighted_loss
+    return tf.reduce_mean(unweighted_loss), tf.reduce_mean(weighted_loss)
+
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
 
-# e2e_model.compile(optimizer=optimizer, loss='binary_crossentropy')
-
 print('Training')
-# tb_callback = tf.keras.callbacks.TensorBoard(log_dir='tensorboard')
-# cp_callback = tf.keras.callbacks.ModelCheckpoint('checkpoints/recurrent_model_{epoch}', verbose=1, save_weights_only=True)
 EPOCHS = 10
-# e2e_model.fit(train_data, epochs=EPOCHS, verbose=2, callbacks=[tb_callback, cp_callback])
 for epoch in range(1, EPOCHS+1):
     print('Starting epoch {}.'.format(epoch))
 
     for batch, (inputs, map_label)in enumerate(train_data):
-        # sequence_length = int(random.random() * 8 + 9)
-        # inp_obs = inp_obs[:,:sequence_length]
-        # inp_vp = inp_vp[:,:sequence_length]
+
         with tf.GradientTape() as tape:
             embedding = representation_net(inputs)
-            map_estimate = mapping_net(embedding)# e2e_model([inp_obs, inp_vp])
-            loss = tf.reduce_mean(tf.keras.losses.binary_crossentropy(map_label, map_estimate))
+            map_estimate = mapping_net(embedding)
+            loss, wloss = loss_fn(map_label, map_estimate)
         weights = representation_net.trainable_variables + mapping_net.trainable_variables
-        grads = tape.gradient(loss, weights)
+        grads = tape.gradient(wloss, weights)
         optimizer.apply_gradients(zip(grads, weights))
         if batch % 200 == 0:
-            print("Loss during batch {}: {}".format(batch, float(loss)))
+            print("Loss during batch {}: {}, {} (weighted)".format(batch, float(loss), float(wloss)))
 
     print('Saving Models')
-    representation_net.save_weights('checkpoints/recurrent_fc/repnet_{}.cpkt'.format(epoch + load))
-    mapping_net.save_weights('checkpoints/recurrent_fc/mapnet_{}.cpkt'.format(epoch + load))
-# print('Evaluating model')
-# e2e_model.evaluate(dev_data, verbose=1)
+    representation_net.save_weights('checkpoints/recurrent_fc_v2/repnet_{}.cpkt'.format(epoch + load))
+    mapping_net.save_weights('checkpoints/recurrent_fc_v2/mapnet_{}.cpkt'.format(epoch + load))
 print('Done!')

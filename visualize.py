@@ -1,9 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from constants import *
+import tensorflow as tf
 
-NUM_INPUT_OBS = 16
-NUM_TEST_OBS = 16
+NUM_INPUT_OBS = 24
+NUM_TEST_OBS = 1
 
 LABEL_POINTS = True
 
@@ -24,12 +25,19 @@ def plot_points(pos, rot, c, offset=0):
 
 given_views = data['input_vps']
 actual_map = data['map_label']
+map_tensor = tf.reshape(tf.convert_to_tensor(actual_map),[1, 64, 64, 1])
+filt = tf.ones([3, 3, 1, 1])
+conv = tf.reshape(tf.nn.convolution(map_tensor, filt, padding='SAME'), [1, 64, 64])
+mask = (tf.cast(tf.logical_and(conv < 8.5, conv > 0.5), dtype=tf.float32) * 3 + 1)
+plt.matshow(mask.numpy()[0], extent=(0, MAP_SIZE, MAP_SIZE, 0))
+plt.show()
+
 label_views = data['label_vps']
 perm = data['perm']
 plt.matshow(actual_map, extent=(0, MAP_SIZE, MAP_SIZE, 0))
 
 plot_points(*process_vps(given_views), 'g', offset=0)
-plot_points(*process_vps(label_views), 'r', offset=NUM_INPUT_OBS)
+# plot_points(*process_vps(label_views), 'r', offset=NUM_INPUT_OBS)
     
 
 plt.show()
