@@ -133,7 +133,7 @@ if len(sys.argv) > 1:
 
 loss_filter = tf.ones([3, 3, 1, 1])
 
-def loss_fn(y_true, y_pred, weight=16):
+def loss_fn(y_true, y_pred, weight=64):
     y_true = tf.reshape(y_true, [-1, MAP_SIZE, MAP_SIZE, 1])
     y_pred = tf.reshape(y_pred, [-1, MAP_SIZE, MAP_SIZE, 1])
     unweighted_loss = tf.keras.losses.binary_crossentropy(y_true, y_pred)
