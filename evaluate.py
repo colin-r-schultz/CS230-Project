@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import architectures.recurrent_fc as model
 import dataloader
-from dataloader import ensure_shapes, tuplify, open_npz
+from dataloader import open_npz
 from constants import *
 import os
 import sys
@@ -28,6 +28,18 @@ def parse_scene(path):
     map_label = tf.cast(map_label, tf.float32)
     return images[:NUM_INPUT_OBS], views[:NUM_INPUT_OBS], images[NUM_INPUT_OBS:NUM_INPUT_OBS+NUM_TEST_OBS], views[NUM_INPUT_OBS:NUM_INPUT_OBS+NUM_TEST_OBS], map_label, perm, path
 
+def ensure_shapes(inp_obs, inp_vp, obs, vp, map_label, perm, path):
+    inp_obs.set_shape([NUM_INPUT_OBS] + IMG_SHAPE)
+    inp_vp.set_shape([NUM_INPUT_OBS, VIEW_DIM])
+    map_label.set_shape([MAP_SIZE, MAP_SIZE])
+    obs.set_shape([NUM_TEST_OBS] + IMG_SHAPE)
+    vp.set_shape([NUM_TEST_OBS, VIEW_DIM])
+    perm.set_shape([SHOTS_PER_SCENE])
+    return inp_obs, inp_vp, obs, vp, map_label, perm, path
+
+
+def tuplify(inp_obs, inp_vp, obs, vp, map_label, perm, path):
+    return (inp_obs, inp_vp, obs), (vp, map_label), (perm, path)
 
 def create_dataset(path):
     list_scenes = tf.data.Dataset.list_files('data/{}/chunk*/scene*'.format(path)).shuffle(buffer_size=128)
