@@ -3,6 +3,7 @@ models
 datasets*
 pybullettest.py
 example.py
+eglRenderTest.py
 .DS_Store
 IKEA_models.zip
 __pycache__

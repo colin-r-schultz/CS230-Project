@@ -17,6 +17,8 @@ DATASET_PATH = 'datasets'
 if len(sys.argv) > 1:
     DATASET_PATH = sys.argv[1]
 
+DATASET_PATH = 'data/' + DATASET_PATH
+
 
 UNIT_SCALE = {
     'meters': 1,
@@ -214,7 +216,7 @@ N_CHUNKS = M // CHUNK_SIZE
 start = time.time()
 for j in range(N_CHUNKS): 
     chunkName = DATASET_PATH + '/chunk{}'.format(j)
-    os.mkdir(chunkName)
+    os.makedirs(chunkName)
     for i in range(CHUNK_SIZE):
         sceneFolder = chunkName + '/scene{}'.format(i)
         os.mkdir(sceneFolder)
