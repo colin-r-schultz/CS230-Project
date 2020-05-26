@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-import architectures.recurrent_fc as model
+import architectures.recurrent_gru as model
 import dataloader
 from dataloader import open_npz
 from constants import *
@@ -52,6 +52,8 @@ def get_single(tensor):
     return tensor.numpy()[0]
 
 representation_net = model.representation_network(True)
+representation_net.summary()
+exit()
 mapping_net = model.mapping_network()
 
 if len(sys.argv) > 1:
