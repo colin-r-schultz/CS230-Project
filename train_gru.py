@@ -30,7 +30,7 @@ e2e_model = model.build_e2e_model()
 e2e_model.compile(optimizer=optimizer, loss=loss_fn)
 
 tb_callback = tf.keras.callbacks.TensorBoard(log_dir='tensorboard')
-cp_callback = tf.keras.callbacks.ModelCheckpoint('checkpoints/'+model.CHECKPOINT_PATH+'/e2e_model_{epoch}', verbose=1, save_weights_only=True)
+cp_callback = tf.keras.callbacks.ModelCheckpoint('checkpoints/'+model.CHECKPOINT_PATH+'/e2e_model_{epoch}.ckpt', verbose=1, save_weights_only=True)
 
 print('Training model')
 e2e_model.fit(train, epochs=200, callbacks=[tb_callback, cp_callback], verbose=2)

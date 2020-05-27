@@ -55,7 +55,7 @@ e2e_model = model.build_e2e_model()
 
 if len(sys.argv) > 1:
     load = int(sys.argv[1])
-    e2e_model.load_weights('checkpoints/{}/e2e_model_{}.cpkt'.format(model.CHECKPOINT_PATH, load))
+    e2e_model.load_weights('checkpoints/{}/e2e_model_{}'.format(model.CHECKPOINT_PATH, load))
     # representation_net.load_weights('checkpoints/{}/repnet_{}.cpkt'.format(model.CHECKPOINT_PATH, load))
     # mapping_net.load_weights('checkpoints/{}/mapnet_{}.cpkt'.format(model.CHECKPOINT_PATH,load))
 
