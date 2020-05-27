@@ -51,15 +51,13 @@ def create_dataset(path):
 def get_single(tensor):
     return tensor.numpy()[0]
 
-representation_net = model.representation_network(True)
-representation_net.summary()
-exit()
-mapping_net = model.mapping_network()
+e2e_model = model.build_e2e_model()
 
 if len(sys.argv) > 1:
     load = int(sys.argv[1])
-    representation_net.load_weights('checkpoints/{}/repnet_{}.cpkt'.format(model.CHECKPOINT_PATH, load))
-    mapping_net.load_weights('checkpoints/{}/mapnet_{}.cpkt'.format(model.CHECKPOINT_PATH,load))
+    e2e_model.load_weights('checkpoints/{}/e2e_model_{}.cpkt'.format(model.CHECKPOINT_PATH, load))
+    # representation_net.load_weights('checkpoints/{}/repnet_{}.cpkt'.format(model.CHECKPOINT_PATH, load))
+    # mapping_net.load_weights('checkpoints/{}/mapnet_{}.cpkt'.format(model.CHECKPOINT_PATH,load))
 
 os.mkdir('visuals')
 dev_set = create_dataset('dev')
@@ -67,8 +65,9 @@ for f in dev_set.take(1):
     pass
 inputs, labels, metadata = f
 inp_obs, inp_vp, test_obs = inputs
-embedding = representation_net((inp_obs, inp_vp))
-map_estimate = mapping_net(embedding)
+# embedding = representation_net((inp_obs, inp_vp))
+# map_estimate = mapping_net(embedding)
+map_estimate = e2e_model.predict((inp_obs, inp_vp))
 perm, path = metadata
 vp_labels, map_label = labels
 input_vps = get_single(inputs[1])
