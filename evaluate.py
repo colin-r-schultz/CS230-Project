@@ -87,5 +87,5 @@ def move_images_to_folder(path, folder, array):
 move_images_to_folder(strpath, 'visuals/given_images', perm[:NUM_INPUT_OBS])
 move_images_to_folder(strpath, 'visuals/unknown_images', perm[NUM_INPUT_OBS:NUM_INPUT_OBS+NUM_TEST_OBS])
 np.savez('visuals/data.npz', perm=perm, path=strpath, input_vps=input_vps, 
-    est_vps=0, map_estimate=get_single(map_estimate),
+    est_vps=0, map_estimate=map_estimate[0],
     map_label=get_single(map_label), label_vps=get_single(vp_labels))
