@@ -48,4 +48,4 @@ if TEST:
     exit()
 
 print('Training model')
-e2e_model.fit(train, epochs=200, callbacks=[tb_callback, cp_callback], verbose=2)
+e2e_model.fit(train, epochs=200, callbacks=[tb_callback, cp_callback], verbose=2, validation_batch_size=dev)
