@@ -9,6 +9,8 @@ from weighted_loss import edge_weighted_loss
 dataloader.NUM_INPUT_OBS = model.NUM_INPUT_OBS
 dataloader.NUM_TEST_OBS = model.NUM_TEST_OBS
 
+TEST = len(sys.argv) > 2 and sys.argv[2] == 'test'
+
 print('Creating datasets')
 def get_relevant(inp, label):
     inp_obs, inp_vp, obs = inp
@@ -16,7 +18,8 @@ def get_relevant(inp, label):
     return (inp_obs, inp_vp), map_label
 
 BATCH_SIZE = 16
-train = dataloader.create_dataset('datasets*', batch_size=BATCH_SIZE).map(get_relevant)
+if not TEST:
+    train = dataloader.create_dataset('datasets*', batch_size=BATCH_SIZE).map(get_relevant)
 dev = dataloader.create_dataset('dev', batch_size=BATCH_SIZE).map(get_relevant)
 
 print('Creating models')
@@ -34,11 +37,12 @@ if len(sys.argv) > 1:
 
 e2e_model.compile(optimizer=optimizer, loss=loss_fn)
 
-tb_callback = tf.keras.callbacks.TensorBoard(log_dir='tensorboard')
-cp_callback = tf.keras.callbacks.ModelCheckpoint('checkpoints/'+model.CHECKPOINT_PATH+'/e2e_model_{epoch}.ckpt', verbose=1, save_weights_only=True)
+if not TEST:
+    tb_callback = tf.keras.callbacks.TensorBoard(log_dir='tensorboard')
+    cp_callback = tf.keras.callbacks.ModelCheckpoint('checkpoints/'+model.CHECKPOINT_PATH+'/e2e_model_{epoch}.ckpt', verbose=1, save_weights_only=True)
 
 
-if len(sys.argv) > 2 and sys.argv[2] == 'test':
+if TEST:
     print('Evaluating model')
     e2e_model.evaluate(dev)
     exit()
