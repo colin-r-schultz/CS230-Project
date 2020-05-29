@@ -39,7 +39,7 @@ e2e_model.compile(optimizer=optimizer, loss=loss_fn)
 
 if not TEST:
     tb_callback = tf.keras.callbacks.TensorBoard(log_dir='tensorboard')
-    cp_callback = tf.keras.callbacks.ModelCheckpoint('checkpoints/'+model.CHECKPOINT_PATH+'/e2e_model_{epoch}.ckpt', verbose=1, save_weights_only=True)
+    cp_callback = tf.keras.callbacks.ModelCheckpoint('checkpoints/'+model.CHECKPOINT_PATH+'/e2e_model_best.ckpt', verbose=1, save_weights_only=True, save_best_only=True, monitor='val_loss')
 
 
 if TEST:
