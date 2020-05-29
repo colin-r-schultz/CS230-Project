@@ -33,7 +33,7 @@ e2e_model = model.build_e2e_model()
 
 if len(sys.argv) > 1:
     load = int(sys.argv[1])
-    e2e_model.load_weights('checkpoints/{}/e2e_model_{}.cpkt'.format(model.CHECKPOINT_PATH, load))
+    e2e_model.load_weights('checkpoints/{}/e2e_model_{}.ckpt'.format(model.CHECKPOINT_PATH, load))
 
 e2e_model.compile(optimizer=optimizer, loss=loss_fn)
 
