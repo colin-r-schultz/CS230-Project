@@ -29,11 +29,15 @@ def loss_fn(y_true, y_pred):
 e2e_model = model.build_e2e_model()
 e2e_model.compile(optimizer=optimizer, loss=loss_fn)
 
+if len(sys.argv) > 1:
+    load = int(sys.argv[1])
+    e2e_model.load_weights('checkpoints/{}/e2e_model_{}'.format(model.CHECKPOINT_PATH, load))
+
 tb_callback = tf.keras.callbacks.TensorBoard(log_dir='tensorboard')
 cp_callback = tf.keras.callbacks.ModelCheckpoint('checkpoints/'+model.CHECKPOINT_PATH+'/e2e_model_{epoch}.ckpt', verbose=1, save_weights_only=True)
 
-print('Training model')
-e2e_model.fit(train, epochs=200, callbacks=[tb_callback, cp_callback], verbose=2)
+# print('Training model')
+# e2e_model.fit(train, epochs=200, callbacks=[tb_callback, cp_callback], verbose=2)
 
 print('Evaluating model')
 e2e_model.evaluate(dev)
