@@ -54,12 +54,15 @@ def get_single(tensor):
 e2e_model = model.build_e2e_model()
 
 if len(sys.argv) > 1:
-    load = int(sys.argv[1])
+    load = sys.argv[1]
     e2e_model.load_weights('checkpoints/{}/e2e_model_{}'.format(model.CHECKPOINT_PATH, load))
     # representation_net.load_weights('checkpoints/{}/repnet_{}.cpkt'.format(model.CHECKPOINT_PATH, load))
     # mapping_net.load_weights('checkpoints/{}/mapnet_{}.cpkt'.format(model.CHECKPOINT_PATH,load))
 
 os.mkdir('visuals')
+dataset = 'dev'
+if len(sys.argv) > 2:
+    dataset = sys.argv[2]
 dev_set = create_dataset('dev')
 for f in dev_set.take(1):
     pass
