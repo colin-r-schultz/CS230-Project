@@ -38,15 +38,16 @@ def localization_loss_fn(y_true, y_pred):
     rot_loss = -tf.reduce_sum(true_rot * pred_rot, axis=-1, keepdims=False)
     roll_loss = tf.keras.losses.mean_squared_error(true_roll, pred_roll)
 
-    return 2 * tf.reduce_mean(pos_loss) + tf.reduce_mean(rot_loss) + 0.5 * tf.reduce_mean(roll_loss)
+    return 4 * (10 * tf.reduce_mean(pos_loss) + tf.reduce_mean(rot_loss) + 0.5 * tf.reduce_mean(roll_loss))
 
+e2e_model = model.build_multitask_model(None)
 
 load = None
 if len(sys.argv) > 1:
     load = sys.argv[1]
-    load = 'checkpoints/{}/e2e_model_{}.ckpt'.format(model.CHECKPOINT_PATH, load)
+    load = 'checkpoints/{}/multi_model_{}.ckpt'.format(model.CHECKPOINT_PATH, load)
+    e2e_model.load_weights(load)
 
-e2e_model = model.build_multitask_model(load)
 
 e2e_model.compile(optimizer=optimizer, loss=[localization_loss_fn, map_loss_fn])
 
