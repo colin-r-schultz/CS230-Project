@@ -2,7 +2,7 @@ import tensorflow as tf
 from constants import *
 
 NUM_INPUT_OBS = 16
-NUM_TEST_OBS = 1 # doesn't use test obs (no localization)
+NUM_TEST_OBS = 16 # doesn't use test obs (no localization)
 
 EMBEDDING_SIZE = 512
 
@@ -56,6 +56,30 @@ def representation_network(pretrained=False):
     model = tf.keras.Model([img_input, pose_input], embedding, name='representation_net')
     return model
 
+def localization_network(pretrained=False):
+    img_input = tf.keras.Input([None] + IMG_SHAPE)
+    embedding = tf.keras.Input([EMBEDDING_SIZE])
+
+    seq_length = NUM_TEST_OBS
+
+    embedding_repeat = tf.keras.layers.RepeatVector(seq_length)(embedding)
+
+    reshaped_img_input = tf.reshape(img_input, [-1] + IMG_SHAPE)
+    reshaped_embedding = tf.reshape(embedding_repeat, [-1, EMBEDDING_SIZE])
+
+    x = TileConvNet(EMBEDDING_SIZE, VIEW_DIM, pretrained)([reshaped_img_input, reshaped_embedding])
+    pos = x[:, :3]
+    rot = x[:, 3:6]
+    roll = x[:, 6:]
+    mag = tf.norm(rot, axis=1, keepdims=True)
+    rot = tf.raw_ops.DivNoNan(x=rot, y=mag)
+    x = tf.concat([pos, rot, roll], axis=1)
+
+    x = tf.reshape(x, [-1, seq_length, VIEW_DIM])
+    model = tf.keras.Model([img_input, embedding], x, name='localization_net')
+    return model
+
+
 def mapping_network():
     generator = tf.keras.Sequential([
         tf.keras.layers.Dense(1024, activation='relu'),
@@ -75,3 +99,14 @@ def build_e2e_model():
     map_estimate = mapping_network()(embedding)
 
     return tf.keras.Model([img_input, pose_input], map_estimate, name='e2e_model')
+
+def build_multitask_model():
+    img_input = tf.keras.Input([None] + IMG_SHAPE)
+    pose_input = tf.keras.Input([None, VIEW_DIM])
+    unknown_img_input = tf.keras.Input([None] + IMG_SHAPE)
+
+    embedding = representation_network(True)([img_input, pose_input])
+    est_vps = localization_network(True)([unknown_img_input, embedding])
+    map_estimate = mapping_network()(embedding)
+
+    return tf.keras.Model([img_input, pose_input, unknown_img_input], [est_vps, map_estimate], name='multitask_model')
