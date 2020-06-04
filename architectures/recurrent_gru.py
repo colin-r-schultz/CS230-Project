@@ -2,7 +2,7 @@ import tensorflow as tf
 from constants import *
 
 NUM_INPUT_OBS = 16
-NUM_TEST_OBS = 16 # doesn't use test obs (no localization)
+NUM_TEST_OBS = 8 # doesn't use test obs (no localization)
 
 EMBEDDING_SIZE = 512
 

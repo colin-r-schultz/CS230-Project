@@ -35,10 +35,10 @@ def localization_loss_fn(y_true, y_pred):
     pred_roll = y_pred[:, :, 6]
     
     pos_loss = tf.keras.losses.mean_squared_error(true_pos, pred_pos)
-    rot_loss = -tf.reduce_sum(true_rot * pred_rot, axis=-1, keepdims=True)
+    rot_loss = -tf.reduce_sum(true_rot * pred_rot, axis=-1, keepdims=False)
     roll_loss = tf.keras.losses.mean_squared_error(true_roll, pred_roll)
 
-    return tf.reduce_mean(2 * pos_loss + rot_loss + 0.5 * roll_loss)
+    return 2 * tf.reduce_mean(pos_loss) + tf.reduce_mean(rot_loss) + 0.5 * tf.reduce_mean(roll_loss)
 
 
 load = None
