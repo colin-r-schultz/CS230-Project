@@ -100,13 +100,16 @@ def build_e2e_model():
 
     return tf.keras.Model([img_input, pose_input], map_estimate, name='e2e_model')
 
-def build_multitask_model():
+def build_multitask_model(weights=None):
     img_input = tf.keras.Input([None] + IMG_SHAPE)
     pose_input = tf.keras.Input([None, VIEW_DIM])
     unknown_img_input = tf.keras.Input([None] + IMG_SHAPE)
 
     embedding = representation_network(True)([img_input, pose_input])
-    est_vps = localization_network(True)([unknown_img_input, embedding])
     map_estimate = mapping_network()(embedding)
+    if weights:
+        e2e_model = tf.keras.Model([img_input, pose_input], map_estimate)
+        e2e_model.load_weights(weights)
+    est_vps = localization_network(True)([unknown_img_input, embedding])
 
     return tf.keras.Model([img_input, pose_input, unknown_img_input], [est_vps, map_estimate], name='multitask_model')

@@ -40,16 +40,18 @@ def localization_loss_fn(y_true, y_pred):
 
     return tf.reduce_mean(2 * pos_loss + rot_loss + 0.5 * roll_loss)
 
-e2e_model = model.build_multitask_model()
 
+load = None
 if len(sys.argv) > 1:
     load = sys.argv[1]
-    e2e_model.load_weights('checkpoints/{}/multi_model_{}.ckpt'.format(model.CHECKPOINT_PATH, load))
+    load = 'checkpoints/{}/e2e_model_{}.ckpt'.format(model.CHECKPOINT_PATH, load)
+
+e2e_model = model.build_e2e_model(load)
 
 e2e_model.compile(optimizer=optimizer, loss=[localization_loss_fn, map_loss_fn])
 
 if not TEST:
-    tb_callback = tf.keras.callbacks.TensorBoard(log_dir='tensorboard')
+    tb_callback = tf.keras.callbacks.TensorBoard(log_dir='tensorboard/multitask')
     cp_callback = tf.keras.callbacks.ModelCheckpoint('checkpoints/'+model.CHECKPOINT_PATH+'/multi_model_best.ckpt', verbose=1, save_weights_only=True, save_best_only=True, monitor='val_loss')
     cp_callback_latest = tf.keras.callbacks.ModelCheckpoint('checkpoints/'+model.CHECKPOINT_PATH+'/multi_model_latest.ckpt', verbose=1, save_weights_only=True, save_best_only=False)
     cbs = [tb_callback, cp_callback, cp_callback_latest]
