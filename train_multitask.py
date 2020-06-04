@@ -46,7 +46,7 @@ if len(sys.argv) > 1:
     load = sys.argv[1]
     load = 'checkpoints/{}/e2e_model_{}.ckpt'.format(model.CHECKPOINT_PATH, load)
 
-e2e_model = model.build_e2e_model(load)
+e2e_model = model.build_multitask_model(load)
 
 e2e_model.compile(optimizer=optimizer, loss=[localization_loss_fn, map_loss_fn])
 
