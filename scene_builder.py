@@ -173,11 +173,10 @@ def build_scene_full():
     return walls, map_label, bodies
 
 
-def process_scene(path):
+def process_scene(path, clear=True):
     walls, map_label, bodies = build_scene_full()
     shots = 0
     views = np.ndarray((SHOTS_PER_SCENE, VIEW_DIM), dtype=np.float32)
-    images = np.ndarray((SHOTS_PER_SCENE, IMAGE_HEIGHT, IMAGE_WIDTH, 3), dtype=np.uint8)
     while shots < SHOTS_PER_SCENE:
         rand = random_pos(walls)
         coords = np.floor(rand / PIXEL_FRACTION).astype(np.int)
@@ -194,10 +193,12 @@ def process_scene(path):
         im.save(path + '/obs{}.png'.format(shots))
         views[shots, :] = view
         shots += 1
-    for obj in bodies:
-        p.removeBody(obj)
+    if clear:
+        for obj in bodies:
+            p.removeBody(obj)
+        bodies = []
     np.savez(path + '/labels.npz', map_label=map_label, views=views)
-    return images, views, map_label
+    return bodies
         
 def add_axis(arr):
     return arr.reshape((1,) + arr.shape)

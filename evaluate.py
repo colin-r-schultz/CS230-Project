@@ -51,11 +51,13 @@ def create_dataset(path):
 def get_single(tensor):
     return tensor.numpy()[0]
 
-e2e_model = model.build_e2e_model()
+# e2e_model = model.build_e2e_model()
+e2e_model = model.build_multitask_model()
 
 if len(sys.argv) > 1:
     load = sys.argv[1]
-    e2e_model.load_weights('checkpoints/{}/e2e_model_{}'.format(model.CHECKPOINT_PATH, load))
+    e2e_model.load_weights('checkpoints/{}/multi_model_{}.ckpt'.format(model.CHECKPOINT_PATH, load))
+    # e2e_model.load_weights('checkpoints/{}/e2e_model_{}'.format(model.CHECKPOINT_PATH, load))
     # representation_net.load_weights('checkpoints/{}/repnet_{}.cpkt'.format(model.CHECKPOINT_PATH, load))
     # mapping_net.load_weights('checkpoints/{}/mapnet_{}.cpkt'.format(model.CHECKPOINT_PATH,load))
 
@@ -63,17 +65,17 @@ os.mkdir('visuals')
 dataset = 'dev'
 if len(sys.argv) > 2:
     dataset = sys.argv[2]
-dev_set = create_dataset('dev')
+dev_set = create_dataset(dataset)
 for f in dev_set.take(1):
     pass
 inputs, labels, metadata = f
 inp_obs, inp_vp, test_obs = inputs
 # embedding = representation_net((inp_obs, inp_vp))
 # map_estimate = mapping_net(embedding)
-map_estimate = e2e_model.predict((inp_obs, inp_vp))
+est_vps, map_estimate = e2e_model.predict(inputs)
 perm, path = metadata
 vp_labels, map_label = labels
-input_vps = get_single(inputs[1])
+input_vps = get_single(inp_vp)
 
 
 strpath = get_single(path).decode()
@@ -90,5 +92,5 @@ def move_images_to_folder(path, folder, array):
 move_images_to_folder(strpath, 'visuals/given_images', perm[:NUM_INPUT_OBS])
 move_images_to_folder(strpath, 'visuals/unknown_images', perm[NUM_INPUT_OBS:NUM_INPUT_OBS+NUM_TEST_OBS])
 np.savez('visuals/data.npz', perm=perm, path=strpath, input_vps=input_vps, 
-    est_vps=0, map_estimate=map_estimate[0],
+    est_vps=est_vps[0], map_estimate=map_estimate[0],
     map_label=get_single(map_label), label_vps=get_single(vp_labels))

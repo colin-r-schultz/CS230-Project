@@ -68,16 +68,20 @@ def localization_network(pretrained=False):
     reshaped_embedding = tf.reshape(embedding_repeat, [-1, EMBEDDING_SIZE])
 
     x = TileConvNet(EMBEDDING_SIZE, VIEW_DIM, pretrained)([reshaped_img_input, reshaped_embedding])
+    x = normalize_output(x)
+
+    x = tf.reshape(x, [-1, seq_length, VIEW_DIM])
+    model = tf.keras.Model([img_input, embedding], x, name='localization_net')
+    return model
+
+def normalize_output(x):
     pos = x[:, :3]
     rot = x[:, 3:6]
     roll = x[:, 6:]
     mag = tf.norm(rot, axis=1, keepdims=True)
     rot = tf.raw_ops.DivNoNan(x=rot, y=mag)
     x = tf.concat([pos, rot, roll], axis=1)
-
-    x = tf.reshape(x, [-1, seq_length, VIEW_DIM])
-    model = tf.keras.Model([img_input, embedding], x, name='localization_net')
-    return model
+    return x
 
 
 def mapping_network():

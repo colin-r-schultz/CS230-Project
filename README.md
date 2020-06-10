@@ -10,7 +10,9 @@ To generate training data, first download the "IKEA 3D models" from http://ikea.
 Creating a dev set must be done manually by moving any number of `chunk` folders from `data/datasets/` to `data/dev/`. Thus you will have `data/dev/chunkX/sceneY` for as many chunks as desired. `dataloader.py` can load data from either set using `create_dataset(folder)`, with `folder` as in `data/folder/chunkX/.../`.
 
 ## Training Models
-Use `train.py` to train models. The models are defined in files in the `architectures` directory. They can be imported and trained, and weight checkpoints will be saved every epoch. Running and training the baseline model is a little different because it was defined more simply.
+Use `train_*.py` to train models. The models are defined in files in the `architectures` directory. They can be imported and trained, and weight checkpoints will be saved every epoch. Running and training the baseline, GRU, and multtask models is a little different as they are trained using the standard `.fit` method while some of the intermediate models were trained using a custom loop.
+
+The multitask model is the one referenced in the paper and video report. It is defined in `architectures/recurrent_gru.py`.
 
 ## Seeing Results
 The `evaluate.py` and `visualize.py` help with evaluation of the models. `evaluate.py` runs a model on some data from the dev set and puts the results as well as the imput data used in a folder called `visuals`. `visualize.py` can be modified slightly to view different outputs and labels using `matplotlib`.
