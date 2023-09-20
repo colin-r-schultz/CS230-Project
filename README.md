@@ -1,6 +1,12 @@
 # Visual Map Embedding with Neural Networks
 This project was made for CS230 at Stanford University. This project aims to create a neural network model capable of creating a dense embedding of a scene from visual images that can be used for robotics tasks such as mapping and localization.
 
+## Documents
+
+[Writeup](/CS230_Project_Report.pdf)
+
+[Video Report](https://youtu.be/UBeKGjXsnho?si=l1Qqc_M63VWZajyp)
+
 ## Requirements
 This project uses `pybullet` for data generation, `tensorflow 2` for the neural network models, and `matplotlib` for visualizations.
 
